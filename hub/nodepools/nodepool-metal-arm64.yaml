@@ -1,0 +1,31 @@
+apiVersion: hypershift.openshift.io/v1beta1
+kind: NodePool
+metadata:
+  creationTimestamp: null
+  name: lab-example-spoke-us-east-1-metal-arm64
+  namespace: lab-example-spoke-us-east-1
+spec:
+  arch: arm64
+  clusterName: lab-spoke1
+  config:
+  - name: 40-enable-forwarding
+  - name: 41-iptables-ip-forwarding
+  management:
+    autoRepair: true
+    upgradeType: InPlace 
+  nodeDrainTimeout: 0s
+  platform:
+    aws:
+      instanceProfile: lab-example-spoke-us-east-1-worker
+      instanceType: m6g.metal
+      rootVolume:
+        size: 100
+        type: gp3
+      subnet:
+        id: <subnet_id>
+    type: AWS
+  release:
+    image: quay.io/openshift-release-dev/ocp-release:4.15.11-multi
+  replicas: 1
+status:
+  replicas: 0

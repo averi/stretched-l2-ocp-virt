@@ -1,0 +1,56 @@
+additionalTrustBundlePolicy: Proxyonly
+apiVersion: v1
+baseDomain: <base_domain>
+controlPlane:
+  architecture: amd64
+  hyperthreading: Enabled
+  name: master
+  replicas: 3
+  platform:
+    aws:
+      zones:
+      - us-east-1a
+      - us-east-1b
+      - us-east-1c
+      rootVolume:
+        iops: 4000
+        size: 100
+        type: io1
+      type: m5.xlarge
+compute:
+- hyperthreading: Enabled
+  architecture: amd64
+  name: 'worker'
+  replicas: 3
+  platform:
+    aws:
+      rootVolume:
+        iops: 2000
+        size: 100
+        type: io1
+      type: m5.xlarge
+      zones:
+      - us-east-1a
+      - us-east-1b
+      - us-east-1c
+metadata:
+  creationTimestamp: null
+  name: lab-example-hub-us-east-1
+networking:
+  clusterNetwork:
+  - cidr: 10.128.0.0/14
+    hostPrefix: 23
+  machineNetwork:
+  - cidr: <machine_network_cidr>
+  networkType: OVNKubernetes
+  serviceNetwork:
+  - 172.30.0.0/16
+platform:
+  aws:
+    region: us-east-1
+    subnets:
+    - <subnet_id>
+    - <subnet_id>
+    - <subnet_id>
+pullSecret: <pull_secret
+sshKey: <ssh_pub_key>

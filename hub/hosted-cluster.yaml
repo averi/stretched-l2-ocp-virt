@@ -1,0 +1,159 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  creationTimestamp: null
+  name: lab-example-spoke-us-east-1
+spec: {}
+status: {}
+---
+apiVersion: v1
+data:
+  .dockerconfigjson: <dockerconfigjson>
+kind: Secret
+metadata:
+  creationTimestamp: null
+  labels:
+    hypershift.openshift.io/safe-to-delete-with-cluster: "true"
+  name: lab-example-spoke-us-east-1-pull-secret
+  namespace: lab-example-spoke-us-east-1
+---
+apiVersion: v1
+data:
+  key: <etcd_encryption_key>
+kind: Secret
+metadata:
+  creationTimestamp: null
+  labels:
+    hypershift.openshift.io/safe-to-delete-with-cluster: "true"
+  name: lab-example-spoke-us-east-1-etcd-encryption-key
+  namespace: lab-example-spoke-us-east-1
+type: Opaque
+---
+apiVersion: v1
+data:
+  id_rsa.pub: <id_rsa.pub>
+kind: Secret
+metadata:
+  creationTimestamp: null
+  labels:
+    hypershift.openshift.io/safe-to-delete-with-cluster: "true"
+  name: lab-example-spoke-us-east-1-ssh-key
+  namespace: lab-example-spoke-us-east-1
+---
+apiVersion: hypershift.openshift.io/v1beta1
+kind: HostedCluster
+metadata:
+  creationTimestamp: null
+  name: lab-spoke1
+  namespace: lab-example-spoke-us-east-1
+spec:
+  autoscaling: {}
+  configuration: {}
+  controllerAvailabilityPolicy: HighlyAvailable
+  dns:
+    baseDomain: <base_domain>
+    privateZoneID: <private_zone_id>
+  etcd:
+    managed:
+      storage:
+        persistentVolume:
+          size: 8Gi
+          storageClassName: gp3-csi
+        type: PersistentVolume
+    managementType: Managed
+  fips: false
+  infraID: lab-example-spoke-us-east-1
+  issuerURL: https://lab-example-spoke-us-east-1.s3.us-east-1.amazonaws.com/lab-example-spoke-us-east-1
+  networking:
+    clusterNetwork:
+    - cidr: 10.132.0.0/14
+    machineNetwork:
+    - cidr: <machine_network_cidr>
+    networkType: OVNKubernetes
+    serviceNetwork:
+    - cidr: 172.31.0.0/16
+  olmCatalogPlacement: management
+  platform:
+    aws:
+      cloudProviderConfig:
+        subnet:
+          id: <subnet_id>
+        vpc: <vpc_id>
+        zone: us-east-1a
+      endpointAccess: Private
+      multiArch: true
+      region: us-east-1
+      rolesRef:
+        controlPlaneOperatorARN: arn:aws:iam::594827103456:role/lab-example-spoke-us-east-1-control-plane-operator
+        imageRegistryARN: arn:aws:iam::594827103456:role/lab-example-spoke-us-east-1-openshift-image-registry
+        ingressARN: arn:aws:iam::594827103456:role/lab-example-spoke-us-east-1-openshift-ingress
+        kubeCloudControllerARN: arn:aws:iam::594827103456:role/lab-example-spoke-us-east-1-cloud-controller
+        networkARN: arn:aws:iam::594827103456:role/lab-example-spoke-us-east-1-cloud-network-config-controller
+        nodePoolManagementARN: arn:aws:iam::594827103456:role/lab-example-spoke-us-east-1-node-pool
+        storageARN: arn:aws:iam::594827103456:role/lab-example-spoke-us-east-1-aws-ebs-csi-driver-controller
+    type: AWS
+  pullSecret:
+    name: lab-example-spoke-us-east-1-pull-secret
+  release:
+    image: quay.io/openshift-release-dev/ocp-release:4.15.11-multi
+  secretEncryption:
+    aescbc:
+      activeKey:
+        name: lab-example-spoke-us-east-1-etcd-encryption-key
+    type: aescbc
+  services:
+  - service: APIServer
+    servicePublishingStrategy:
+      route:
+        hostname: api-lab-example-spoke-us-east-1.lab-scale-hub1-aws-us-east-1.example.com
+      type: Route
+  - service: OAuthServer
+    servicePublishingStrategy:
+      route:
+        hostname: oauth-lab-example-spoke-us-east-1.lab-scale-hub1-aws-us-east-1.example.com
+      type: Route
+  - service: Konnectivity
+    servicePublishingStrategy:
+      type: Route
+  - service: Ignition
+    servicePublishingStrategy:
+      type: Route
+  - service: OVNSbDb
+    servicePublishingStrategy:
+      type: Route
+  sshKey:
+    name: lab-example-spoke-us-east-1-ssh-key
+status:
+  controlPlaneEndpoint:
+    host: ""
+    port: 0
+---
+apiVersion: hypershift.openshift.io/v1beta1
+kind: NodePool
+metadata:
+  creationTimestamp: null
+  name: lab-example-spoke-us-east-1-us-east-1a
+  namespace: lab-example-spoke-us-east-1
+spec:
+  arch: amd64
+  clusterName: lab-spoke1
+  management:
+    autoRepair: true
+    upgradeType: Replace
+  nodeDrainTimeout: 0s
+  platform:
+    aws:
+      instanceProfile: lab-example-spoke-us-east-1-worker
+      instanceType: m5.xlarge
+      rootVolume:
+        size: 100
+        type: gp3
+      subnet:
+        id: <subnet_id>
+    type: AWS
+  release:
+    image: quay.io/openshift-release-dev/ocp-release:4.15.11-x86_64
+  replicas: 2
+status:
+  replicas: 0
+---

@@ -1,0 +1,9 @@
+apiVersion: k8s.cni.cncf.io/v1
+kind: NetworkAttachmentDefinition
+metadata:
+  name: internal-network
+  namespace: virtualization
+spec:
+  config: >-
+    {"name":"internal-network","cniVersion":"0.3.1","plugins":[{"type":"cnv-bridge","bridge":"br-vlan100","mtu":9000,"ipam":{}},{"type":"cnv-tuning"}]}
+

@@ -1,0 +1,45 @@
+apiVersion: frrk8s.metallb.io/v1beta1
+kind: FRRConfiguration
+metadata:
+  name: frr-evpn-172-29-1-50
+  namespace: frr-k8s-system
+spec:
+  nodeSelector:
+    matchLabels:
+      kubernetes.io/hostname: "ip-172-29-1-50.ec2.internal"
+  raw:
+    priority: 1
+    rawConfig: |-
+      router bgp 65000
+      bgp router-id 172.29.1.50
+      bgp cluster-id 172.29.1.50
+
+      neighbor 172.31.1.250 remote-as 65000
+      neighbor 172.31.1.250 update-source 172.29.1.50
+
+      bgp log-neighbor-changes
+      neighbor fabric peer-group
+      neighbor fabric remote-as 65000
+      neighbor fabric capability extended-nexthop
+      neighbor fabric update-source 172.29.1.50
+      bgp listen range 172.29.1.0/24 peer-group fabric
+
+      address-family ipv4 unicast
+        neighbor fabric activate
+        neighbor fabric route-reflector-client
+
+        neighbor fabric filter-list IN_PREFIXES in
+        neighbor 172.31.1.250 filter-list IN_PREFIXES in
+      exit-address-family
+
+      address-family l2vpn evpn
+        neighbor fabric activate
+        neighbor fabric route-reflector-client
+
+        neighbor 172.31.1.250 activate
+        neighbor 172.31.1.250 route-reflector-client
+      exit-address-family
+
+      ip prefix-list IN_PREFIXES seq 5 deny 0.0.0.0/0
+      ip prefix-list IN_PREFIXES seq 10 permit 172.30.1.0/24
+      ip prefix-list IN_PREFIXES seq 100 deny any

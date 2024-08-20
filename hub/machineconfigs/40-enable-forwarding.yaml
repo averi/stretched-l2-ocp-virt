@@ -1,0 +1,25 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: 40-enable-forwarding
+  namespace: lab-example-spoke-us-east-1
+data:
+  config: |
+    apiVersion: machineconfiguration.openshift.io/v1
+    kind: MachineConfig
+    metadata:
+      labels:
+        machineconfiguration.openshift.io/role: worker
+      name: 40-enable-forwarding
+    spec:
+      config:
+        ignition:
+          version: 3.4.0
+        storage:
+          files:
+            - contents:
+                compression: ""
+                source: data:,%2net%2Fipv4%2Fconf%2Fall%2Fforwarding%20%3D%201%0A
+              mode: 420
+              overwrite: true
+              path: /etc/sysctl.d/enable-forwarding.conf

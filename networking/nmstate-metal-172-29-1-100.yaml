@@ -1,0 +1,74 @@
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: evpn-172-29-1-100
+spec:
+  nodeSelector:
+      node-role.kubernetes.io/worker: ""
+      kubernetes.io/hostname: "ip-172-29-1-100.ec2.internal"
+  desiredState:
+    interfaces:
+      - name: vrf1
+        type: vrf
+        state: up
+        vrf:
+          route-table-id: 1100
+          port:
+          - br-vni1100
+          - br-vlan100
+
+      - name: br-vni1100
+        type: linux-bridge
+        state: up
+        mtu: 9001
+        ipv4:
+          dhcp: false
+          enabled: false
+        bridge:
+          options:
+            stp:
+              enabled: false
+          port:
+            - name: vni1100
+
+      - name: vni1100
+        type: vxlan
+        state: up
+        mtu: 8951
+        vxlan:
+          id: 1100
+          local: 172.29.1.100
+          learning: false
+
+      - name: br-vlan100
+        type: linux-bridge
+        state: up
+        mtu: 9001
+        bridge:
+          options:
+            stp:
+              enabled: false
+          port:
+            - name: vni100
+            - name: enp3s0.100
+        ipv4:
+          enabled: true
+          address:
+            - ip: 172.30.1.250
+              prefix-length: 24
+
+      - name: vni100
+        type: vxlan
+        state: up
+        mtu: 8951
+        vxlan:
+          id: 100
+          local: 172.29.1.100
+          learning: false
+
+      - name: enp3s0.100
+        type: vlan
+        state: up
+        vlan:
+          base-iface: enp3s0
+          id: 100

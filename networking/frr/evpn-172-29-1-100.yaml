@@ -1,0 +1,64 @@
+apiVersion: frrk8s.metallb.io/v1beta1
+kind: FRRConfiguration
+metadata:
+  name: frr-evpn-172-29-1-100
+  namespace: frr-k8s-system
+spec:
+  nodeSelector:
+    matchLabels:
+      node-role.kubernetes.io/worker: ""
+      kubernetes.io/hostname: "ip-172-29-1-100.ec2.internal"
+  raw:
+    priority: 1
+    rawConfig: |-
+      vrf vrf1
+        vni 1100
+      exit-vrf
+
+      router bgp 65000
+         bgp router-id 172.29.1.100
+         neighbor 172.29.1.50 remote-as 65000
+
+         address-family ipv4 unicast
+           redistribute kernel route-map DEFAULT_GW
+
+           rd vpn export 65000:1000
+           rt vpn export 65000:2000
+           rt vpn import 65000:2100
+           export vpn
+           import vpn
+         exit-address-family
+
+         address-family l2vpn evpn
+           neighbor 172.29.1.50 activate
+           advertise-all-vni
+           advertise-svi-ip
+         exit-address-family
+
+      router bgp 65000 vrf vrf1
+        bgp router-id 172.29.1.100
+
+        address-family ipv4 unicast
+          redistribute static
+          redistribute connected route-map DC_SUB
+
+          rd vpn export 65000:1100
+          rt vpn import 65000:2000
+          rt vpn export 65000:2100
+          export vpn
+          import vpn
+        exit-address-family
+
+        address-family l2vpn evpn
+          advertise ipv4 unicast
+        exit-address-family
+
+      ip prefix-list DEFAULT_GW seq 5 permit 0.0.0.0/0
+      route-map DEFAULT_GW permit 1000
+        match ip address prefix-list DEFAULT_GW
+        set extcommunity rt 65000:2000
+
+      ip prefix-list DC_SUB seq 5 permit 172.30.1.0/24 le 32
+      route-map DC_SUB permit 1000
+        match ip address prefix-list DC_SUB
+        set extcommunity rt 65000:2100

@@ -1,0 +1,37 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: 41-iptables-ip-forwarding
+  namespace: lab-example-spoke-us-east-1
+data:
+  config: |
+    apiVersion: machineconfiguration.openshift.io/v1
+    kind: MachineConfig
+    metadata:
+      labels:
+        machineconfiguration.openshift.io/role: worker
+      name: 41-iptables-ip-forwarding
+    spec:
+      config:
+        ignition:
+          version: 3.4.0
+        systemd:
+          units:
+            - name: iptables-ip-forwarding.service
+              enabled: true
+              contents: |
+                [Unit]
+                Description=Enables IP forwarding via iptables
+                Wants=network-pre.target
+                Before=network-pre.target
+
+                [Service]
+                Type=oneshot
+
+                ExecStart=/usr/sbin/iptables -A FORWARD -i vrf1 -o br-ex -j ACCEPT
+                ExecStart=/usr/sbin/iptables -A FORWARD -i br-ex -o br-vlan100 -j ACCEPT
+                ExecStart=/usr/sbin/iptables -t nat -A POSTROUTING -o br-ex -m mark --mark 1100 -j MASQUERADE
+                ExecStart=/usr/sbin/iptables -t mangle -A PREROUTING -i vrf1 -j MARK --set-mark 1100
+
+                [Install]
+                WantedBy=multi-user.target
